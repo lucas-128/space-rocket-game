@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Space Explorers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            touch-action: none;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        #game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #joystick-zone {
+            position: fixed;
+            bottom: 100px;
+            left: 85%;
+            width: 120px;
+            height: 120px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: none;
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #username-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        #username-form {
+            background-color: #111;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        #username-input {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            background-color: #222;
+            border: none;
+            color: white;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #coordinates {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 14px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            border-radius: 5px;
+
+            #fuel-bar-container {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                width: 200px;
+                height: 20px;
+                border: 2px solid white;
+                background: gray;
+            }
+
+            #fuel-bar {
+                width: 100%;
+                height: 100%;
+                background: green;
+            }
+
+
+        }
+
+        #lever-container {
+            width: 320px;
+            height: 30px;
+            background: #222;
+            border-radius: 15px;
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        #lever {
+            width: 20px;
+            height: 30px;
+            background: #ff5500;
+            border-radius: 10px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: left 0.1s ease-out;
+        }
+
+        #accelerate-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 350px;
+            width: 100px;
+            height: 100px;
+            background: greenyellow;
+            color: black;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50%;
+        }
+
+        #accelerate-btn.active {
+            background-color: #4CAF50;
+            /* Green or any color to indicate active state */
+            transform: scale(1.1);
+            /* Optional: slightly enlarge the button when active */
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container"></div>
+    <div id="joystick-zone"></div>
+
+    <div id="coordinates">X: 0, Y: 0</div>
+    <button id="accelerate-btn">GO</button>
+
+    <div id="fuel-bar-container">
+        <div id="fuel-bar"></div>
+    </div>
+    <div id="loading-screen">
+        <p>Preparing for launch...</p>
+    </div>
+
+    <div id="lever-container">
+        <div id="lever"></div>
+    </div>
+
+
+
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>

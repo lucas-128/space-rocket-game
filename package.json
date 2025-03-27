@@ -1,0 +1,20 @@
+{
+    "name": "space-rocket-game",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "nipplejs": "^0.10.1",
+        "three": "^0.160.0"
+    },
+    "devDependencies": {
+        "@types/three": "^0.160.0",
+        "typescript": "^5.2.2",
+        "vite": "^6.2.2"
+    }
+}
