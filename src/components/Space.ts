@@ -3,7 +3,10 @@ import * as THREE from 'three';
 interface Chunk {
     position: string;
     object: THREE.Group;
-    fuelCanister?: THREE.Mesh;
+    fuelCanister?: {
+        mesh: THREE.Mesh;
+        chunkKey: string;
+    };
 }
 
 export default class Space {
@@ -11,18 +14,18 @@ export default class Space {
     private chunkSize: number;
     private loadedChunks: Map<string, Chunk>;
     private playerChunk: string;
-    private fuelCanisters: THREE.Mesh[];
+    private fuelCanisterMap: Map<THREE.Mesh, string>;
 
     constructor(chunkSize: number = 1000) {
         this.object = new THREE.Group();
         this.chunkSize = chunkSize;
         this.loadedChunks = new Map();
         this.playerChunk = '';
-        this.fuelCanisters = [];
+        this.fuelCanisterMap = new Map();
     }
 
     public init(): void {
-        this.updateChunks(new THREE.Vector3(0, 0, 0)); // Start at origin
+        this.updateChunks(new THREE.Vector3(0, 0, 0));
     }
 
     private updateChunks(playerPosition: THREE.Vector3): void {
@@ -31,12 +34,11 @@ export default class Space {
         const cz = Math.floor(playerPosition.z / this.chunkSize);
         const newChunkKey = `${cx},${cy},${cz}`;
 
-        if (newChunkKey === this.playerChunk) return; // Player hasn't moved to a new chunk
+        if (newChunkKey === this.playerChunk) return;
 
         this.playerChunk = newChunkKey;
 
-        // Load surrounding chunks
-        const radius = 3; // Load chunks around the player
+        const radius = 3;
         for (let dx = -radius; dx <= radius; dx++) {
             for (let dy = -radius; dy <= radius; dy++) {
                 for (let dz = -radius; dz <= radius; dz++) {
@@ -48,7 +50,6 @@ export default class Space {
             }
         }
 
-        // Unload distant chunks
         this.cleanupChunks(cx, cy, cz, radius);
     }
 
@@ -59,16 +60,23 @@ export default class Space {
         const chunkGroup = new THREE.Group();
         chunkGroup.add(this.generateStarsForChunk(cx, cy, cz));
 
-        // 25% chance to spawn a fuel canister
-        if (Math.random() < 0.05) {
+        const chunkData: Chunk = {
+            position: chunkKey,
+            object: chunkGroup
+        };
+
+        if (Math.random() < 0.01) {
             const fuelCanister = this.createFuelCanister(cx, cz);
             chunkGroup.add(fuelCanister);
-            this.fuelCanisters.push(fuelCanister);
-            //console.log("Fuel canister added to chunk:", chunkKey, fuelCanister);
+            chunkData.fuelCanister = {
+                mesh: fuelCanister,
+                chunkKey: chunkKey
+            };
+            this.fuelCanisterMap.set(fuelCanister, chunkKey);
         }
 
         this.object.add(chunkGroup);
-        this.loadedChunks.set(chunkKey, { position: chunkKey, object: chunkGroup });
+        this.loadedChunks.set(chunkKey, chunkData);
     }
 
     private createFuelCanister(cx: number, cz: number): THREE.Mesh {
@@ -84,48 +92,40 @@ export default class Space {
     }
 
     public checkFuelPickup(playerPosition: THREE.Vector3): boolean {
-        for (let i = 0; i < this.fuelCanisters.length; i++) {
-            const canister = this.fuelCanisters[i];
-            if (playerPosition.distanceTo(canister.position) < 50) {
-                console.log("Fuel canister picked up:", canister);
-
-                // Find the chunk that contains the fuel canister
-                const chunkKey = this.getChunkKeyFromPosition(canister.position);
-                const chunk = this.loadedChunks.get(chunkKey);
-
-                if (chunk) {
-                    // console.log("Removing canister from chunk:", chunkKey);
-                    chunk.object.remove(canister); // Remove from the chunk's group
-                } else {
-                    //console.warn("Chunk not found for canister:", chunkKey);
-                }
-
-                // Remove the canister from the main object group
-                //console.log("Removing canister from main object group");
-                this.object.remove(canister);
-
-                // Remove the canister from the fuelCanisters array
-                //console.log("Removing canister from fuelCanisters array");
-                this.fuelCanisters.splice(i, 1);
-
+        for (const [canister, chunkKey] of this.fuelCanisterMap) {
+            if (playerPosition.distanceTo(canister.position) < 10) {
+                this.removeFuelCanister(canister, chunkKey);
                 return true;
             }
         }
         return false;
     }
 
+    private removeFuelCanister(canister: THREE.Mesh, chunkKey: string): void {
+        // Remove from chunk
+        const chunk = this.loadedChunks.get(chunkKey);
+        if (chunk?.fuelCanister?.mesh === canister) {
+            chunk.object.remove(canister);
+            delete chunk.fuelCanister;
+        }
 
-    private getChunkKeyFromPosition(position: THREE.Vector3): string {
-        const cx = Math.floor(position.x / this.chunkSize);
-        const cy = Math.floor(position.y / this.chunkSize);
-        const cz = Math.floor(position.z / this.chunkSize);
-        return `${cx},${cy},${cz}`;
+        // Remove from scene and clean up
+        this.object.remove(canister);
+        this.fuelCanisterMap.delete(canister);
+
+        // Dispose resources
+        canister.geometry.dispose();
+        if (Array.isArray(canister.material)) {
+            canister.material.forEach(mat => mat.dispose());
+        } else {
+            canister.material.dispose();
+        }
     }
 
     private fadeInStars(material: THREE.PointsMaterial): void {
         let opacity = 0;
-        const fadeDuration = 1.5; // 1.5 seconds fade-in
-        const fadeStep = 1 / (fadeDuration * 60); // Assuming 60 FPS
+        const fadeDuration = 1.5;
+        const fadeStep = 1 / (fadeDuration * 60);
 
         function fade() {
             opacity += fadeStep;
@@ -139,33 +139,30 @@ export default class Space {
         fade();
     }
 
-
     private generateStarsForChunk(cx: number, cy: number, cz: number): THREE.Points {
         const starsGeometry = new THREE.BufferGeometry();
         const starsMaterial = new THREE.PointsMaterial({
             color: 0xFFFFFF,
-            size: 4,
+            size: 3,
             sizeAttenuation: true,
             transparent: true,
             opacity: 0
         });
 
-        const starCount = 5;
+        const starCount = 4;
         const positions = new Float32Array(starCount * 3);
 
         for (let i = 0; i < starCount; i++) {
             const i3 = i * 3;
             positions[i3] = (Math.random() - 0.5) * this.chunkSize + cx * this.chunkSize;
-            positions[i3 + 1] = (Math.random() - 0.5) * this.chunkSize + cy * this.chunkSize + (Math.random() - 0.5) * 200; // 0 == altura nave
+            positions[i3 + 1] = (Math.random() - 0.5) * this.chunkSize + cy * this.chunkSize + (Math.random() - 0.5) * 200;
             positions[i3 + 2] = (Math.random() - 0.5) * this.chunkSize + cz * this.chunkSize;
         }
 
         starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const stars = new THREE.Points(starsGeometry, starsMaterial);
 
-        // Animate opacity from 0 to 1 (fade-in effect)
         this.fadeInStars(starsMaterial);
-
         return stars;
     }
 
@@ -175,6 +172,10 @@ export default class Space {
         this.loadedChunks.forEach((chunk, key) => {
             const [chunkX, chunkY, chunkZ] = key.split(',').map(Number);
             if (Math.abs(chunkX - cx) > radius || Math.abs(chunkY - cy) > radius || Math.abs(chunkZ - cz) > radius) {
+                if (chunk.fuelCanister) {
+                    this.removeFuelCanister(chunk.fuelCanister.mesh, key);
+                }
+
                 this.object.remove(chunk.object);
                 chunksToRemove.push(key);
             }

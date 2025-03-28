@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export default class Rocket {
     private object: THREE.Group;
-    private speed: number = 100;
+    private speed: number = 1000;
     private rotationSpeed: number = 3;
     private fuel: number = 100;
 

@@ -72,8 +72,7 @@ export default class Game {
 
         // Check if in fuel pickup
         if (this.space.checkFuelPickup(rocketPosition)) {
-            this.rocket.refuel(50);
-            console.log("Fuel canister picked up and refueled.");
+            this.rocket.refuel(100);
         }
 
         // Update space (generate stars dynamically)

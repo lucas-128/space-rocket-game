@@ -37,7 +37,6 @@ export default class Controls {
             };
         }
 
-        // 🚀 Acceleration button
         if (accelerateButton) {
             accelerateButton.addEventListener('mousedown', () => {
                 this.isAccelerating = true;
@@ -49,7 +48,6 @@ export default class Controls {
                 accelerateButton.classList.remove('active');
             });
 
-            // Mobile support
             accelerateButton.addEventListener('touchstart', () => {
                 this.isAccelerating = true;
                 accelerateButton.classList.add('active');
@@ -80,11 +78,11 @@ export default class Controls {
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
                 this.isAccelerating = false;
                 if (accelerateButton) {
-                    accelerateButton.classList.remove('active'); // Remove active class for visual feedback
+                    accelerateButton.classList.remove('active');
                 }
             } else if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'ArrowRight' || e.code === 'KeyD') {
                 this.rotationValue = 0;
-                this.updateLeverPosition(); // Update the visual feedback for rotation reset
+                this.updateLeverPosition();
             }
         });
     }
