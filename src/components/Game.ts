@@ -15,6 +15,13 @@ export default class Game {
     private chunkSize: number = 1000;
     private coordinatesDisplay: HTMLElement | null;
     private fuelBar: HTMLElement | null;
+    private gameOver: boolean = false;
+    private startPopup: HTMLElement | null;
+    private endPopup: HTMLElement | null;
+    private startButton: HTMLElement | null;
+    private restartButton: HTMLElement | null;
+    private endMessage: HTMLElement | null;
+
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -26,56 +33,123 @@ export default class Game {
         this.controls = new Controls();
         this.coordinatesDisplay = document.getElementById('coordinates');
         this.fuelBar = document.getElementById('fuel-bar');
+        this.startPopup = document.getElementById('start-popup');
+        this.endPopup = document.getElementById('end-popup');
+        this.startButton = document.getElementById('start-btn');
+        this.restartButton = document.getElementById('restart-btn');
+        this.endMessage = document.getElementById('end-message');
+
+
+        this.setupEventListeners();
+        this.showStartPopup();
     }
+
+    private setupEventListeners(): void {
+
+
+        this.startButton?.addEventListener('click', () => {
+
+            this.hideStartPopup();
+        });
+
+
+        this.restartButton?.addEventListener('click', () => {
+            this.hideEndPopup();
+            this.restartGame();
+        });
+    }
+
+    private showEndPopup(win: boolean): void {
+        if (this.endPopup && this.endMessage) {
+            this.endMessage.textContent = win ? "Mission Accomplished!" : "Mission Failed!";
+            this.endPopup.style.display = 'flex';
+        }
+    }
+
+    private hideEndPopup(): void {
+        if (this.endPopup) {
+            this.endPopup.style.display = 'none';
+        }
+    }
+
+    private showStartPopup(): void {
+        if (this.startPopup) {
+            this.startPopup.style.display = 'flex';
+        }
+    }
+
+    private hideStartPopup(): void {
+        if (this.startPopup) {
+            this.startPopup.style.display = 'none';
+        }
+    }
+
+    private restartGame(): void {
+        // Clean up existing game
+        const container = document.getElementById('game-container');
+        if (container) {
+            container.innerHTML = '';
+        }
+
+        // Reset game state
+        this.gameOver = false;
+        this.scene = new THREE.Scene();
+        this.clock = new THREE.Clock();
+        this.rocket = new Rocket();
+        this.space = new Space(this.chunkSize);
+        this.controls = new Controls();
+
+        // Reinitialize
+        this.init();
+    }
+
+
 
     public init(): void {
         const container = document.getElementById('game-container');
-
-        // Setup renderer
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        container!.innerHTML = '';
         container?.appendChild(this.renderer.domElement);
 
-        // Setup camera
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+
         this.camera.init();
         this.scene.add(this.camera.getObject());
 
-        // Setup space
         this.space.init();
         this.scene.add(this.space.getObject());
 
-        // Setup rocket
         this.rocket.init();
         this.scene.add(this.rocket.getObject());
 
-        // Setup controls
         this.controls.init();
 
-        // Start game loop
         this.animate();
     }
 
     private animate(): void {
+        if (this.gameOver) return;
+
         requestAnimationFrame(() => this.animate());
         const delta = this.clock.getDelta();
 
-        // Check fuel level
         const fuel = this.rocket.getFuel();
         if (fuel <= 0) {
-            console.log('Game over! Out of fuel!');
+            this.endGame(false);
             return;
         }
 
-
-        // Get rocket position
         const rocketPosition = this.rocket.getPosition();
 
-        // Check if in fuel pickup
+        if (this.space.checkTargetReached(rocketPosition)) {
+            this.endGame(true);
+            return;
+        }
+
         if (this.space.checkFuelPickup(rocketPosition)) {
             this.rocket.refuel(100);
         }
 
-        // Update space (generate stars dynamically)
         this.space.updatePlayerPosition(rocketPosition);
 
         if (this.controls.isAcceleratingThrust()) {
@@ -85,23 +159,26 @@ export default class Game {
         const rotationInput = this.controls.getRotation();
         this.rocket.rotate(rotationInput, delta);
 
-        // Update camera to follow rocket - now passing delta time
         this.camera.follow(this.rocket.getObject(), delta);
 
-        // Update coordinates display
         if (this.coordinatesDisplay) {
-            this.coordinatesDisplay.textContent = `X: ${Math.round(rocketPosition.x)}, Y: ${Math.round(rocketPosition.z)}`;
+            const targetPos = this.space.getTargetPosition();
+            const distanceToTarget = Math.round(rocketPosition.distanceTo(targetPos));
+            this.coordinatesDisplay.textContent = `X: ${Math.round(rocketPosition.x)}, Y: ${Math.round(rocketPosition.z)} | Target Distance: ${distanceToTarget}`;
         }
 
-        // Update fuel bar UI
         if (this.fuelBar) {
             this.fuelBar.style.width = `${fuel}%`;
             this.fuelBar.style.backgroundColor = fuel < 20 ? 'red' : 'limegreen';
             this.fuelBar.style.height = '10px';
         }
 
-        // Render the scene
         this.renderer.render(this.scene, this.camera.getCamera());
+    }
+
+    private endGame(win: boolean): void {
+        this.gameOver = true;
+        this.showEndPopup(win);
     }
 
     public handleResize(): void {

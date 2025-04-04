@@ -15,6 +15,8 @@ export default class Space {
     private loadedChunks: Map<string, Chunk>;
     private playerChunk: string;
     private fuelCanisterMap: Map<THREE.Mesh, string>;
+    private target: THREE.Mesh;
+    private targetPosition: THREE.Vector3;
 
     constructor(chunkSize: number = 1000) {
         this.object = new THREE.Group();
@@ -22,10 +24,41 @@ export default class Space {
         this.loadedChunks = new Map();
         this.playerChunk = '';
         this.fuelCanisterMap = new Map();
+        this.target = new THREE.Mesh();
+        this.targetPosition = new THREE.Vector3();
     }
 
     public init(): void {
+        this.createTarget();
         this.updateChunks(new THREE.Vector3(0, 0, 0));
+    }
+
+    private createTarget(): void {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 10000;
+        this.targetPosition.set(
+            Math.cos(angle) * distance,
+            0,
+            Math.sin(angle) * distance
+        );
+
+        const geometry = new THREE.SphereGeometry(32, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x00fff0,
+            transparent: true,
+            opacity: 0.9
+        });
+        this.target = new THREE.Mesh(geometry, material);
+        this.target.position.copy(this.targetPosition);
+        this.object.add(this.target);
+    }
+
+    public checkTargetReached(position: THREE.Vector3): boolean {
+        return position.distanceTo(this.targetPosition) < 100;
+    }
+
+    public getTargetPosition(): THREE.Vector3 {
+        return this.targetPosition;
     }
 
     private updateChunks(playerPosition: THREE.Vector3): void {
@@ -65,7 +98,7 @@ export default class Space {
             object: chunkGroup
         };
 
-        if (Math.random() < 0.01) {
+        if (Math.random() < 0.03) {
             const fuelCanister = this.createFuelCanister(cx, cz);
             chunkGroup.add(fuelCanister);
             chunkData.fuelCanister = {
@@ -102,18 +135,15 @@ export default class Space {
     }
 
     private removeFuelCanister(canister: THREE.Mesh, chunkKey: string): void {
-        // Remove from chunk
         const chunk = this.loadedChunks.get(chunkKey);
         if (chunk?.fuelCanister?.mesh === canister) {
             chunk.object.remove(canister);
             delete chunk.fuelCanister;
         }
 
-        // Remove from scene and clean up
         this.object.remove(canister);
         this.fuelCanisterMap.delete(canister);
 
-        // Dispose resources
         canister.geometry.dispose();
         if (Array.isArray(canister.material)) {
             canister.material.forEach(mat => mat.dispose());

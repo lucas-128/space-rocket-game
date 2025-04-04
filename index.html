@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Space Explorers</title>
+    <link rel="icon" href="/rocket.ico" type="image/x-icon" />
     <style>
         * {
             margin: 0;
@@ -37,6 +38,71 @@
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             display: none;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            font-family: Arial, sans-serif;
+        }
+
+        .modal-content {
+            background-color: #111;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid #2563eb;
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+        }
+
+        .modal-content h2 {
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+
+        .modal-content ul {
+            text-align: left;
+            margin: 15px 0;
+            padding-left: 20px;
+            color: #ddd;
+        }
+
+        .modal-content li {
+            margin-bottom: 8px;
+        }
+
+        #start-btn,
+        #restart-btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        #start-btn:hover,
+        #restart-btn:hover {
+            background-color: #1d4ed8;
+            transform: scale(1.05);
         }
 
         #loading-screen {
@@ -168,9 +234,7 @@
 
         #accelerate-btn.active {
             background-color: #4CAF50;
-            /* Green or any color to indicate active state */
             transform: scale(1.1);
-            /* Optional: slightly enlarge the button when active */
             transition: all 0.2s ease;
         }
     </style>
@@ -198,6 +262,29 @@
 
 
     <script type="module" src="/src/main.ts"></script>
+
+    <div id="start-popup" class="modal">
+        <div class="modal-content">
+            <h2>🚀 Space Explorers 🚀</h2>
+            <p>Controls:</p>
+            <ul>
+                <li>Steer using the lever at the bottom, arrow keys, or "A" and "D"</li>
+                <li>Accelerate with the green button, the spacebar, or "W"</li>
+                <li>Collect red fuel canisters to avoid running out of fuel</li>
+                <li>Reach the light blue target to win</li>
+            </ul>
+
+            <button id="start-btn">Begin Mission</button>
+        </div>
+    </div>
+
+    <div id="end-popup" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="end-message">Mission Complete!</h2>
+            <button id="restart-btn">New Mission</button>
+        </div>
+    </div>
+
 </body>
 
 </html>
